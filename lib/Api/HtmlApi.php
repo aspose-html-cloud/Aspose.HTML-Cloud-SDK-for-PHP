@@ -24,7 +24,7 @@
  * @author    Alexander Makogon <alexander.makogon@aspose.com>
  * @copyright 2022 Aspose
  * @license   https://opensource.org/licenses/mit-license.php  MIT License
- * @version   GIT: @25.12.1@
+ * @version   GIT: @26.7.1@
  * @link      https://packagist.org/packages/aspose/html-sdk-php
  */
 
@@ -232,10 +232,26 @@ class HtmlApi
                 $opt['colors_limit'] = $options['colors_limit'];
             if (array_key_exists('line_width',$options) && $options['line_width'])
                 $opt['line_width'] = $options['line_width'];
+
+            // Map resolution (DPI) for image outputs (PNG, JPEG, BMP, GIF, TIFF, WEBP).
+            // Ignored by the server for non-image output formats. Default on the
+            // server side is 96 when not provided.
+            if (array_key_exists('resolution',$options) && $options['resolution'])
+                $opt['resolution'] = $options['resolution'];
         }
 
         if(count($opt))
             $httpBody["Options"] = $opt;
+
+        // Map pdfMetadata as a top-level property (sibling of Options).
+        // Only meaningful when the output format is PDF; server ignores it
+        // for other target formats. Any field left null / not provided is
+        // omitted so the rendering engine defaults are preserved.
+        if($options) {
+            $pdfMetadata = $this->buildPdfMetadata($options);
+            if($pdfMetadata !== null)
+                $httpBody["PdfMetadata"] = $pdfMetadata;
+        }
 
         $httpBody = json_encode($httpBody);
 
@@ -447,6 +463,60 @@ class HtmlApi
         return $this->convert($src, $dest, $srcInLocal, $dstInLocal, false, $options, $storage_name);
     }
 
+
+    /**
+     * Build the pdfMetadata request payload from the user options array.
+     *
+     * Accepts either snake_case (creation_date / modification_date) or
+     * camelCase (creationDate / modificationDate) keys. All fields are
+     * optional; any that are null or missing are omitted from the produced
+     * payload so the rendering engine defaults are preserved.
+     *
+     * The metadata may be provided in two ways:
+     *  - $options['pdf_metadata']  (preferred, an associative array)
+     *  - individual top-level keys on $options (e.g. 'title', 'author', ...)
+     *
+     * @param array $options User-supplied options array.
+     *
+     * @return array|null    The pdfMetadata payload, or null if nothing was set.
+     */
+    private function buildPdfMetadata(array $options) : ?array {
+
+        // Pick a nested pdf_metadata / pdfMetadata array first, otherwise fall
+        // back to top-level keys on $options for convenience.
+        if (array_key_exists('pdf_metadata', $options) && is_array($options['pdf_metadata']))
+            $source = $options['pdf_metadata'];
+        elseif (array_key_exists('pdfMetadata', $options) && is_array($options['pdfMetadata']))
+            $source = $options['pdfMetadata'];
+        else
+            $source = $options;
+
+        // Map of accepted input keys -> outbound JSON key.
+        $fieldMap = [
+            'title'              => 'title',
+            'author'             => 'author',
+            'subject'            => 'subject',
+            'keywords'           => 'keywords',
+            'creator'            => 'creator',
+            'producer'           => 'producer',
+            'creation_date'      => 'creationDate',
+            'creationDate'       => 'creationDate',
+            'modification_date'  => 'modificationDate',
+            'modificationDate'   => 'modificationDate',
+        ];
+
+        $payload = [];
+        foreach ($fieldMap as $inKey => $outKey) {
+            if (array_key_exists($inKey, $source) && $source[$inKey] !== null && $source[$inKey] !== '') {
+                // Do not overwrite an already populated outKey via an alias.
+                if (!array_key_exists($outKey, $payload)) {
+                    $payload[$outKey] = $source[$inKey];
+                }
+            }
+        }
+
+        return count($payload) ? $payload : null;
+    }
 
     private function getInputFormat(string $src) : string {
 

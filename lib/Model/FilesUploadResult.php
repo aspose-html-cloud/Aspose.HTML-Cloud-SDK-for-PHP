@@ -24,7 +24,7 @@
  * @author    Alexander Makogon <alexander.makogon@aspose.com>
  * @copyright 2022 Aspose
  * @license   https://opensource.org/licenses/mit-license.php  MIT License
- * @version   GIT: @25.12.1@
+ * @version   GIT: @26.7.1@
  * @link      https://packagist.org/packages/aspose/html-sdk-php
  */
 

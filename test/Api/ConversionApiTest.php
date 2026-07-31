@@ -573,6 +573,92 @@ class ConversionApiTest extends BaseTest
         }
     }
 
+    /**
+     * Test case for conversion to image formats with a custom resolution (DPI).
+     *
+     * The `resolution` option is honored only for raster image outputs. This
+     * test verifies the option is accepted by the server and the resulting
+     * file is produced.
+     */
+    public function testConvertLocalToLocalHtmlWithResolution() {
+
+        $src = self::$testFolder . "test1.html";
+
+        $formats = ['png', 'jpeg', 'bmp', 'gif', 'tiff', 'webp'];
+        foreach ($formats as $f) {
+            $dst = self::$testResult . 'resolution_300.' . $f;
+
+            $options = [
+                'width'      => 800,
+                'height'     => 1000,
+                'resolution' => 300,
+            ];
+
+            $result = self::$api_html->convertLocalToLocal($src, $dst, $options);
+
+            $this->assertTrue($result->getCode() == 200, "Error code after conversion with resolution to " . $f);
+            $this->assertTrue($result->getStatus() == 'completed', "Error status after conversion with resolution to " . $f);
+            $this->assertTrue(file_exists($result->getFile()), "File not exists after conversion with resolution to " . $f);
+        }
+    }
+
+    /**
+     * Test case for conversion to PDF with a full pdfMetadata payload.
+     *
+     * The `pdf_metadata` option populates the PDF /Info dictionary. Test
+     * verifies the server accepts the extended request and the file is
+     * produced.
+     */
+    public function testConvertLocalToLocalHtmlWithPdfMetadataFull() {
+
+        $src = self::$testFolder . "test1.html";
+        $dst = self::$testResult . 'pdf_metadata_full.pdf';
+
+        $options = [
+            'pdf_metadata' => [
+                'title'             => 'Monthly Report',
+                'author'            => 'Jane Doe',
+                'subject'           => 'Q3 Results',
+                'keywords'          => 'report, q3, pdf',
+                'creator'           => 'My Application',
+                'producer'          => 'My Company',
+                'creation_date'     => '2024-01-15T10:30:00Z',
+                'modification_date' => '2024-06-20T18:45:00Z',
+            ],
+        ];
+
+        $result = self::$api_html->convertLocalToLocal($src, $dst, $options);
+
+        $this->assertTrue($result->getCode() == 200, "Error code after conversion to pdf with metadata");
+        $this->assertTrue($result->getStatus() == 'completed', "Error status after conversion to pdf with metadata");
+        $this->assertTrue(file_exists($result->getFile()), "File not exists after conversion to pdf with metadata");
+    }
+
+    /**
+     * Test case for conversion to PDF with a partial pdfMetadata payload.
+     *
+     * Only some metadata fields are supplied; unspecified fields must be
+     * omitted from the outgoing request so the engine defaults apply.
+     */
+    public function testConvertLocalToLocalHtmlWithPdfMetadataPartial() {
+
+        $src = self::$testFolder . "test1.html";
+        $dst = self::$testResult . 'pdf_metadata_partial.pdf';
+
+        $options = [
+            'pdf_metadata' => [
+                'title'  => 'My Document',
+                'author' => 'John Doe',
+            ],
+        ];
+
+        $result = self::$api_html->convertLocalToLocal($src, $dst, $options);
+
+        $this->assertTrue($result->getCode() == 200, "Error code after conversion to pdf with partial metadata");
+        $this->assertTrue($result->getStatus() == 'completed', "Error status after conversion to pdf with partial metadata");
+        $this->assertTrue(file_exists($result->getFile()), "File not exists after conversion to pdf with partial metadata");
+    }
+
 
     public function providerConversion(): array
     {

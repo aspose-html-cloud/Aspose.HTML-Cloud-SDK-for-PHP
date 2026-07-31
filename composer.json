@@ -31,5 +31,5 @@
     "autoload-dev": {
         "psr-4": { "Client\\Invoker\\" : "test/" }
     },
-     "version": "25.12.1"
+     "version": "26.7.1"
 }
