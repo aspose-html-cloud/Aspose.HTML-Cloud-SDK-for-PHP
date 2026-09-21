@@ -56,6 +56,24 @@ abstract class BaseTest extends \PHPUnit\Framework\TestCase
     protected static string $testResult;
 
     /**
+     * Read a credential from the environment, falling back to a literal.
+     *
+     * @param string[] $names    Environment variables to try, in order.
+     * @param string   $fallback Value used when none of them is set.
+     */
+    protected static function credential(array $names, string $fallback) : string
+    {
+        foreach ($names as $name) {
+            $value = getenv($name);
+            if ($value !== false && $value !== "") {
+                return $value;
+            }
+        }
+
+        return $fallback;
+    }
+
+    /**
      * Setup before running any test cases
      */
     public static function setUpBeforeClass() : void
@@ -63,14 +81,20 @@ abstract class BaseTest extends \PHPUnit\Framework\TestCase
 
  //Configuration - pass by constructor
         $configuration = array(
-//            "basePath" => "https://api.aspose.cloud/v4.0",
-//            "authPath" => "https://api.aspose.cloud/connect/token",
-//            "apiKey" => "71a5b89b3f83cd39195d7fc39382babd",
-//            "appSID" => "5add06cf-9af7-44f6-b180-dfcc2583cfcb",
-            "basePath" => "http://localhost:5000/v4.0",
-            "authPath" => "https://api-qa.aspose.cloud/connect/token",
-            "apiKey" => "html.cloud",
-            "appSID" => "html.cloud",
+            // Credentials come from the environment so CI (or the SDK test
+            // agent) can run against its own subscription; the literals stay
+            // as a local fallback.
+            "basePath" => "https://api.aspose.cloud/v4.0",
+            "authPath" => "https://api.aspose.cloud/connect/token",
+            "apiKey" => self::credential(["ASPOSE_CLIENT_SECRET", "APP_KEY"],
+                                         "71a5b89b3f83cd39195d7fc39382babd"),
+            "appSID" => self::credential(["ASPOSE_CLIENT_ID", "APP_SID"],
+                                         "5add06cf-9af7-44f6-b180-dfcc2583cfcb"),
+            // Local debugging against a service running on this machine:
+            // "basePath" => "http://localhost:5000/v4.0",
+            // "authPath" => "https://api-qa.aspose.cloud/connect/token",
+            // "apiKey" => "html.cloud",
+            // "appSID" => "html.cloud",
 
             "testResult" => "\\testresult\\",
             "testData" => "\\testdata\\",
@@ -84,6 +108,13 @@ abstract class BaseTest extends \PHPUnit\Framework\TestCase
         self::$api_stor = new StorageApi($configuration);
         self::$testFolder = realpath(__DIR__ . '/../..') . $configuration['testData'];
         self::$testResult = realpath(__DIR__ . '/../..') . $configuration['testResult'];
+
+        // The result directory is not kept in the repository, so create it on
+        // demand instead of letting every conversion test fail on a missing
+        // path.
+        if (!is_dir(self::$testResult)) {
+            mkdir(self::$testResult, 0777, true);
+        }
     }
 
     public function downloadHelper($path)
