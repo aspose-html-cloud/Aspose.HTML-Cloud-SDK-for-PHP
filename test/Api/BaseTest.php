@@ -56,12 +56,15 @@ abstract class BaseTest extends \PHPUnit\Framework\TestCase
     protected static string $testResult;
 
     /**
-     * Read a credential from the environment, falling back to a literal.
+     * Read a credential from the environment.
      *
-     * @param string[] $names    Environment variables to try, in order.
-     * @param string   $fallback Value used when none of them is set.
+     * Credentials are never stored in the repository. Set ASPOSE_CLIENT_ID and
+     * ASPOSE_CLIENT_SECRET (or the APP_SID / APP_KEY aliases) before running
+     * the suite; the SDK test agent does this automatically.
+     *
+     * @param string[] $names Environment variables to try, in order.
      */
-    protected static function credential(array $names, string $fallback) : string
+    protected static function credential(array $names) : string
     {
         foreach ($names as $name) {
             $value = getenv($name);
@@ -70,7 +73,10 @@ abstract class BaseTest extends \PHPUnit\Framework\TestCase
             }
         }
 
-        return $fallback;
+        throw new \RuntimeException(
+            "Missing Aspose Cloud credentials: set one of "
+            . implode(" / ", $names) . " in the environment."
+        );
     }
 
     /**
@@ -81,15 +87,10 @@ abstract class BaseTest extends \PHPUnit\Framework\TestCase
 
  //Configuration - pass by constructor
         $configuration = array(
-            // Credentials come from the environment so CI (or the SDK test
-            // agent) can run against its own subscription; the literals stay
-            // as a local fallback.
             "basePath" => "https://api.aspose.cloud/v4.0",
             "authPath" => "https://api.aspose.cloud/connect/token",
-            "apiKey" => self::credential(["ASPOSE_CLIENT_SECRET", "APP_KEY"],
-                                         "71a5b89b3f83cd39195d7fc39382babd"),
-            "appSID" => self::credential(["ASPOSE_CLIENT_ID", "APP_SID"],
-                                         "5add06cf-9af7-44f6-b180-dfcc2583cfcb"),
+            "apiKey" => self::credential(["ASPOSE_CLIENT_SECRET", "APP_KEY"]),
+            "appSID" => self::credential(["ASPOSE_CLIENT_ID", "APP_SID"]),
             // Local debugging against a service running on this machine:
             // "basePath" => "http://localhost:5000/v4.0",
             // "authPath" => "https://api-qa.aspose.cloud/connect/token",
