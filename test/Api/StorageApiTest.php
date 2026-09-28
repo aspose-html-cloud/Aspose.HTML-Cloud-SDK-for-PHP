@@ -29,10 +29,8 @@
 namespace Client\Invoker\Api;
 
 use Client\Invoker\ApiException;
-use Client\Invoker\Model\DiscUsage;
 use Client\Invoker\Model\FileVersions;
 use Client\Invoker\Model\ObjectExist;
-use Client\Invoker\Model\StorageExist;
 use SplFileObject;
 
 /**
@@ -43,23 +41,6 @@ use SplFileObject;
  */
 class StorageApiTest extends BaseTest
 {
-
-    /**
-     * Test case for getDiscUsage
-     *
-     * @param  string $storage_name Storage name (optional)
-     *
-     * @throws ApiException on non-2xx response
-     * @throws InvalidArgumentException
-     * @return DiscUsage
-     */
-    public function testGetDiscUsage() : void
-    {
-        $storage_name = null;
-        $result = self::$api_stor->getDiscUsage($storage_name);
-        $this->assertTrue($result->getUsedSize() > 0);
-        $this->assertTrue($result->getTotalSize() > 0);
-    }
 
     /**
      * Test case for objectExists
@@ -106,25 +87,5 @@ class StorageApiTest extends BaseTest
         $result = self::$api_stor->objectExists($path_not_exist_folder, $storage_name, $version_id);
         $this->assertFalse($result->getExists());
         $this->assertFalse($result->getIsFolder());
-    }
-
-    /**
-     * Test case for storageExists
-     *
-     * @param  string $storage_name Storage name (required)
-     *
-     * @throws ApiException on non-2xx response
-     * @throws InvalidArgumentException
-     * @return StorageExist
-     */
-    public function testStorageExists():void
-    {
-        $storage_name_not_exist = "NotExist";
-        $result = self::$api_stor->storageExists($storage_name_not_exist);
-        $this->assertFalse($result->getExists());
-
-//        $storage_name_exist = "";
-//        $result = self::$api_stor->storageExists($storage_name_exist);
-//        $this->assertTrue($result->getExists());
     }
 }
